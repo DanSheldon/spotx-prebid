@@ -3,13 +3,13 @@ import { Renderer } from 'src/Renderer';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 
-const BIDDER_CODE = 'spotx2';
+const BIDDER_CODE = 'spotx';
 const URL = '//search.spotxchange.com/openrtb/2.3/dados/';
-const VERSION = '2.3';
+const ORTB_VERSION = '2.3';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['spotx2'],
+  aliases: ['spotx'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -58,7 +58,7 @@ export const spec = {
       }
     }
 
-    utils.logWarn(VERSION);
+    utils.logWarn(ORTB_VERSION);
 
     return true;
   },
@@ -98,7 +98,7 @@ export const spec = {
         ad_unit: 'outstream',
         hide_skin: hideSkin,
         content_page_url: page,
-        versionOrtb: VERSION,
+        versionOrtb: ORTB_VERSION,
         bidId: bid.bidId,
         videoSlot: bid.params.video.video_slot,
         outstream_static: bid.params.video.outstream_static ? bid.params.video.outstream_static : false
@@ -126,7 +126,7 @@ export const spec = {
       }
 
       if (utils.getBidIdParameter('start_delay', bid.params.video) != '') {
-        spotxImp.startdelay = 0 + Boolean(utils.getBidIdParameter('start_delay', bid.params.video));
+        spotxImp.video.startdelay = 0 + Boolean(utils.getBidIdParameter('start_delay', bid.params.video));
       }
 
       if (bid.crumbs && bid.crumbs.pubcid) {
@@ -135,6 +135,7 @@ export const spec = {
 
       return spotxImp;
     });
+
     const language = navigator.language ? 'language' : 'userLanguage';
     const device = {
       h: screen.height,
@@ -170,7 +171,7 @@ export const spec = {
       userExt.consent = bidderRequest.gdprConsent.consentString;
 
       if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-        payload.regs = {
+        requestPayload.regs = {
           ext: {
             gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
           }
@@ -204,26 +205,26 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidderRequest) {
     const bidResponses = [];
-    serverResponse = serverResponse.body;
+    const serverResponseBody = serverResponse.body;
 
     const requestMap = {};
     if (bidderRequest && bidderRequest.data && bidderRequest.data.imp) {
       utils._each(bidderRequest.data.imp, imp => requestMap[imp.id] = imp);
     }
 
-    if (serverResponse && utils.isArray(serverResponse.seatbid)) {
-      utils._each(serverResponse.seatbid, function(bids) {
+    if (serverResponseBody && utils.isArray(serverResponseBody.seatbid)) {
+      utils._each(serverResponseBody.seatbid, function(bids) {
         utils._each(bids.bid, function(spotxBid) {
           const request = requestMap[spotxBid.impid];
 
           const bid = {
             requestId: request.video.ext.bidId,
-            currency: serverResponse.cur || 'USD',
+            currency: serverResponseBody.cur || 'USD',
             cpm: spotxBid.price,
             creativeId: spotxBid.crid || '',
             ttl: 360,
             netRevenue: true,
-            channel_id: serverResponse.id,
+            channel_id: serverResponseBody.id,
             cache_key: spotxBid.ext.cache_key,
             video_slot: request.video.ext.videoSlot
           };
@@ -236,7 +237,7 @@ export const spec = {
           }
 
           if (request.video.ext.ad_unit == 'outstream') {
-            var renderer = Renderer.install({
+            let renderer = Renderer.install({
               id: 0,
               url: '//',
               config: {
@@ -277,7 +278,7 @@ export const spec = {
     if (bidderRequest && bidderRequest.bidRequest && bidderRequest.bidRequest.bids) {
       utils._each(bidderRequest.bidRequest.bids, function(spotxBid) {
         let adId = null;
-        for (var i = 0; i < bidResponses.length; i++) {
+        for (let i = 0; i < bidResponses.length; i++) {
           if (bidResponses[i].requestId == spotxBid.bidId) {
             adId = bidResponses[i].cache_key;
           }
@@ -312,7 +313,7 @@ function outstreamRender(bid) {
 
   window.console.log('[SPOTX][renderer] Handle SpotX outstream/inbanner renderer');
 
-  var script = window.document.createElement('script');
+  let script = window.document.createElement('script');
   script.type = 'text/javascript';
   script.src = '//search.spotxchange.com/js/' + bid.channel_id + '.js';
   script.setAttribute('data-spotx_channel_id', '' + bid.channel_id);
@@ -348,8 +349,8 @@ function outstreamRender(bid) {
   script.setAttribute('data-spotx_video_slot_can_autoplay', '1');
 
   if (bid.renderer.config.inIframe && window.document.getElementById(bid.renderer.config.inIframe).nodeName == 'IFRAME') {
-    var rawframe = window.document.getElementById(bid.renderer.config.inIframe);
-    var framedoc = rawframe.contentDocument;
+    let rawframe = window.document.getElementById(bid.renderer.config.inIframe);
+    let framedoc = rawframe.contentDocument;
     if (!framedoc && rawframe.contentWindow) {
       framedoc = rawframe.contentWindow.document;
     }

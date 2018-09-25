@@ -315,7 +315,7 @@ function outstreamRender(bid) {
 
   let script = window.document.createElement('script');
   script.type = 'text/javascript';
-  script.src = '//search.spotxchange.com/js/' + bid.channel_id + '.js';
+  script.src = '//js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
   script.setAttribute('data-spotx_channel_id', '' + bid.channel_id);
   script.setAttribute('data-spotx_vast_url', '' + bid.vastUrl);
   script.setAttribute('data-spotx_content_width', bid.renderer.config.player_width);

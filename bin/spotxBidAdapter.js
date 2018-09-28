@@ -20,7 +20,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    if (bid && typeof bid.params !== 'object' && (bid.params.video === undefined || typeof bid.params.video !== 'object')) {
+    if (bid && (typeof bid.params !== 'object' || typeof bid.params.video !== 'object')) {
       utils.logMessage(BIDDER_CODE + ': video params is missing or is incorrect');
       return false;
     }
@@ -57,8 +57,6 @@ export const spec = {
         bid.params.video['content_height'] = window.document.getElementById(videoSlotDivId).querySelectorAll('video')[0].offsetHeight;
       }
     }
-
-    utils.logWarn(ORTB_VERSION);
 
     return true;
   },
@@ -108,7 +106,7 @@ export const spec = {
         ext.ad_volume = utils.getBidIdParameter('ad_volume', bid.params.video);
       }
 
-      const mimes = utils.getBidIdParameter('mimes', bid.params.video) != '' ? utils.getBidIdParameter('mimes', bid.params.video) : ['application/javascript', 'video/mp4', 'video/webm'];
+      const mimes = utils.getBidIdParameter('mimes', bid.params.video) || ['application/javascript', 'video/mp4', 'video/webm'];
 
       const spotxImp = {
         id: Date.now(), // Use timestamp as identifier
@@ -170,10 +168,10 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       userExt.consent = bidderRequest.gdprConsent.consentString;
 
-      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+      if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
         requestPayload.regs = {
           ext: {
-            gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
+            gdpr: (!!bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
           }
         };
       }

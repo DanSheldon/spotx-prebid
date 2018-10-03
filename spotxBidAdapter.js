@@ -90,7 +90,7 @@ export const spec = {
       const adMute = utils.getBidIdParameter('ad_mute', bid.params.video) != '' ? 0 + Boolean(utils.getBidIdParameter('ad_mute', bid.params.video)) : 0;
       const hideSkin = utils.getBidIdParameter('hide_skin', bid.params.video) != '' ? 0 + Boolean(utils.getBidIdParameter('hide_skin', bid.params.video)) : 0;
 
-      const ext = {
+      let ext = {
         player_width: contentWidth,
         player_height: contentHeight,
         sdk_name: 'Prebid 1+',
@@ -108,9 +108,17 @@ export const spec = {
         ext.ad_volume = utils.getBidIdParameter('ad_volume', bid.params.video);
       }
 
+      if (utils.getBidIdParameter('outstreamFunction', bid.params.video) != '') {
+        ext.outstreamFunction = utils.getBidIdParameter('outstreamFunction', bid.params.video);
+      }
+
+      if (utils.getBidIdParameter('custom', bid.params.video) != '') {
+        ext.custom = utils.getBidIdParameter('custom', bid.params.video);
+      }
+
       const mimes = utils.getBidIdParameter('mimes', bid.params.video) != '' ? utils.getBidIdParameter('mimes', bid.params.video) : ['application/javascript', 'video/mp4', 'video/webm'];
 
-      const spotxImp = {
+      let spotxImp = {
         id: Date.now(), // Use timestamp as identifier
         secure: secure,
         video: {
@@ -237,7 +245,7 @@ export const spec = {
           }
 
           if (request.video.ext.ad_unit == 'outstream') {
-            let renderer = Renderer.install({
+            const renderer = Renderer.install({
               id: 0,
               url: '//',
               config: {
@@ -246,7 +254,8 @@ export const spec = {
                 player_height: request.video.ext.player_height,
                 content_page_url: request.video.ext.content_page_url,
                 outstream_static: request.video.ext.outstream_static,
-                ad_mute: request.video.ext.ad_mute
+                ad_mute: request.video.ext.ad_mute,
+                outstreamFunction: request.video.ext.outstreamFunction
               }
             });
 
@@ -307,56 +316,7 @@ export const spec = {
 
 function outstreamRender(bid) {
   if (bid.renderer.config.outstreamFunction != null && typeof bid.renderer.config.outstreamFunction === 'function') {
-    bid.renderer.config.outstreamFunction();
-    return;
-  }
-
-  window.console.log('[SPOTX][renderer] Handle SpotX outstream/inbanner renderer');
-
-  let script = window.document.createElement('script');
-  script.type = 'text/javascript';
-  script.src = '//js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
-  script.setAttribute('data-spotx_channel_id', '' + bid.channel_id);
-  script.setAttribute('data-spotx_vast_url', '' + bid.vastUrl);
-  script.setAttribute('data-spotx_content_width', bid.renderer.config.player_width);
-  script.setAttribute('data-spotx_content_height', bid.renderer.config.player_height);
-  script.setAttribute('data-spotx_content_page_url', bid.renderer.config.content_page_url);
-
-  window.parent.mySpotXAdDoneFunction = typeof bid.spotxAdDoneFunction === 'function' ? bid.spotxAdDoneFunction : function mySpotXAdDoneFunction(spotxAdFound) {
-    if (spotxAdFound) {
-      window.console.log('[SPOTX][renderer] ad playing here');
-    } else {
-      window.console.log('[SPOTX][renderer] code to place backup ad request here');
-    }
-  };
-  script.setAttribute('data-spotx_ad_done_function', 'mySpotXAdDoneFunction');
-
-  if (bid.renderer.config.ad_mute) {
-    script.setAttribute('data-spotx_ad_mute', '0');
-  }
-
-  if (bid.renderer.config.outstream_static) {
-    script.setAttribute('data-spotx_ad_unit', 'instream');
-    script.setAttribute('data-spotx_ad_skippable', '0');
-    script.setAttribute('data-spotx_custom_skin', '1');
-  } else {
-    script.setAttribute('data-spotx_ad_unit', 'incontent');
-    script.setAttribute('data-spotx_collapse', '0');
-  }
-
-  script.setAttribute('data-spotx_autoplay', '1');
-  // script.setAttribute('data-spotx_blocked_autoplay_override_mode', '1');
-  script.setAttribute('data-spotx_video_slot_can_autoplay', '1');
-
-  if (bid.renderer.config.inIframe && window.document.getElementById(bid.renderer.config.inIframe).nodeName == 'IFRAME') {
-    let rawframe = window.document.getElementById(bid.renderer.config.inIframe);
-    let framedoc = rawframe.contentDocument;
-    if (!framedoc && rawframe.contentWindow) {
-      framedoc = rawframe.contentWindow.document;
-    }
-    framedoc.body.appendChild(script);
-  } else {
-    window.document.getElementById(bid.video_slot).appendChild(script);
+    bid.renderer.config.outstreamFunction(bid);
   }
 }
 

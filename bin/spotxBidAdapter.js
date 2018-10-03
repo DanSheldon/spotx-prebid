@@ -76,17 +76,13 @@ export const spec = {
     const spotxImps = bidRequests.map(function(bid) {
       const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
 
-      // Mandatory
-      const adMute = utils.getBidIdParameter('ad_mute', bid.params.video) !== '' ? !!utils.getBidIdParameter('ad_mute', bid.params.video) : 0;
-      const hideSkin = utils.getBidIdParameter('hide_skin', bid.params.video) !== '' ? !!utils.getBidIdParameter('hide_skin', bid.params.video) : 0;
-
       const ext = {
         player_width: contentWidth,
         player_height: contentHeight,
         sdk_name: 'Prebid 1+',
-        ad_mute: adMute,
+        ad_mute: !!utils.getBidIdParameter('ad_mute', bid.params.video),
         ad_unit: 'outstream',
-        hide_skin: hideSkin,
+        hide_skin: !!utils.getBidIdParameter('hide_skin', bid.params.video),
         content_page_url: page,
         versionOrtb: ORTB_VERSION,
         bidId: bid.bidId,

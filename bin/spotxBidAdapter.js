@@ -30,32 +30,16 @@ export const spec = {
       return false;
     }
 
-    let videoSlotDivId = utils.getBidIdParameter('video_slot', bid.params.video);
+    const videoSlotDivId = utils.getBidIdParameter('video_slot', bid.params.video);
     if (window.document.getElementById(videoSlotDivId) === null) {
       utils.logMessage(BIDDER_CODE + ': video_slot HTML node id does not exist on the page');
       return false;
     }
 
-    let slotDivId = utils.getBidIdParameter('slot', bid.params.video);
+    const slotDivId = utils.getBidIdParameter('slot', bid.params.video);
     if (window.document.getElementById(slotDivId) === null) {
       utils.logMessage(BIDDER_CODE + ': slot HTML node id does not exist on the page');
       return false;
-    }
-
-    if (utils.getBidIdParameter('content_width', bid.params.video) == '') {
-      if (window.document.getElementById(videoSlotDivId).querySelectorAll('video').length == 0) {
-        bid.params.video['content_width'] = window.document.getElementById(videoSlotDivId).offsetWidth;
-      } else {
-        bid.params.video['content_width'] = window.document.getElementById(videoSlotDivId).querySelectorAll('video')[0].offsetWidth;
-      }
-    }
-
-    if (utils.getBidIdParameter('content_height', bid.params.video) == '') {
-      if (window.document.getElementById(videoSlotDivId).querySelectorAll('video').length == 0) {
-        bid.params.video['content_height'] = window.document.getElementById(videoSlotDivId).offsetHeight;
-      } else {
-        bid.params.video['content_height'] = window.document.getElementById(videoSlotDivId).querySelectorAll('video')[0].offsetHeight;
-      }
     }
 
     return true;
@@ -73,28 +57,32 @@ export const spec = {
     const page = loc.href;
     const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
 
-    let siteId = '';
-    let bid = bidderRequest.bids[0];
-    let channelId = bid.params.video.channel_id;
+    const siteId = '';
+    const bid = bidderRequest.bids[0];
+    const channelId = bid.params.video.channel_id;
     let pubcid = null;
 
-    const contentWidth = utils.getBidIdParameter('content_width', bid.params.video);
-    const contentHeight = utils.getBidIdParameter('content_height', bid.params.video);
+    const videoSlotDiv = window.document.getElementById(utils.getBidIdParameter('video_slot', bid.params.video));
+    const hasVideoElement = videoSlotDiv.querySelectorAll('video').length;
+    const contentWidth = utils.getBidIdParameter('content_width', bid.params.video) ||
+      (hasVideoElement ?
+      videoSlotDiv.querySelectorAll('video')[0].offsetWidth :
+      videoSlotDiv.offsetWidth);
+    const contentHeight = utils.getBidIdParameter('content_height', bid.params.video) ||
+      (hasVideoElement ?
+      videoSlotDiv.querySelectorAll('video')[0].offsetHeight :
+      videoSlotDiv.offsetHeight);
 
     const spotxImps = bidRequests.map(function(bid) {
       const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
-
-      // Mandatory
-      const adMute = utils.getBidIdParameter('ad_mute', bid.params.video) != '' ? 0 + Boolean(utils.getBidIdParameter('ad_mute', bid.params.video)) : 0;
-      const hideSkin = utils.getBidIdParameter('hide_skin', bid.params.video) != '' ? 0 + Boolean(utils.getBidIdParameter('hide_skin', bid.params.video)) : 0;
 
       const ext = {
         player_width: contentWidth,
         player_height: contentHeight,
         sdk_name: 'Prebid 1+',
-        ad_mute: adMute,
+        ad_mute: !!utils.getBidIdParameter('ad_mute', bid.params.video),
         ad_unit: 'outstream',
-        hide_skin: hideSkin,
+        hide_skin: !!utils.getBidIdParameter('hide_skin', bid.params.video),
         content_page_url: page,
         versionOrtb: ORTB_VERSION,
         bidId: bid.bidId,
@@ -109,7 +97,7 @@ export const spec = {
       const mimes = utils.getBidIdParameter('mimes', bid.params.video) || ['application/javascript', 'video/mp4', 'video/webm'];
 
       const spotxImp = {
-        id: Date.now(), // Use timestamp as identifier
+        id: Date.now(),
         secure: secure,
         video: {
           w: contentWidth,
@@ -235,7 +223,7 @@ export const spec = {
           }
 
           if (request.video.ext.ad_unit == 'outstream') {
-            let renderer = Renderer.install({
+            const renderer = Renderer.install({
               id: 0,
               url: '//',
               config: {
@@ -311,7 +299,7 @@ function outstreamRender(bid) {
 
   window.console.log('[SPOTX][renderer] Handle SpotX outstream/inbanner renderer');
 
-  let script = window.document.createElement('script');
+  const script = window.document.createElement('script');
   script.type = 'text/javascript';
   script.src = '//js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
   script.setAttribute('data-spotx_channel_id', '' + bid.channel_id);
@@ -347,7 +335,7 @@ function outstreamRender(bid) {
   script.setAttribute('data-spotx_video_slot_can_autoplay', '1');
 
   if (bid.renderer.config.inIframe && window.document.getElementById(bid.renderer.config.inIframe).nodeName == 'IFRAME') {
-    let rawframe = window.document.getElementById(bid.renderer.config.inIframe);
+    const rawframe = window.document.getElementById(bid.renderer.config.inIframe);
     let framedoc = rawframe.contentDocument;
     if (!framedoc && rawframe.contentWindow) {
       framedoc = rawframe.contentWindow.document;

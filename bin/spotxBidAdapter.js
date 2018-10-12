@@ -20,7 +20,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    if (bid && typeof bid.params !== 'object' && (bid.params.video === undefined || typeof bid.params.video !== 'object')) {
+    if (bid && (typeof bid.params !== 'object' || typeof bid.params.video !== 'object')) {
       utils.logMessage(BIDDER_CODE + ': video params is missing or is incorrect');
       return false;
     }
@@ -30,35 +30,17 @@ export const spec = {
       return false;
     }
 
-    let videoSlotDivId = utils.getBidIdParameter('video_slot', bid.params.video);
+    const videoSlotDivId = utils.getBidIdParameter('video_slot', bid.params.video);
     if (window.document.getElementById(videoSlotDivId) === null) {
       utils.logMessage(BIDDER_CODE + ': video_slot HTML node id does not exist on the page');
       return false;
     }
 
-    let slotDivId = utils.getBidIdParameter('slot', bid.params.video);
+    const slotDivId = utils.getBidIdParameter('slot', bid.params.video);
     if (window.document.getElementById(slotDivId) === null) {
       utils.logMessage(BIDDER_CODE + ': slot HTML node id does not exist on the page');
       return false;
     }
-
-    if (utils.getBidIdParameter('content_width', bid.params.video) == '') {
-      if (window.document.getElementById(videoSlotDivId).querySelectorAll('video').length == 0) {
-        bid.params.video['content_width'] = window.document.getElementById(videoSlotDivId).offsetWidth;
-      } else {
-        bid.params.video['content_width'] = window.document.getElementById(videoSlotDivId).querySelectorAll('video')[0].offsetWidth;
-      }
-    }
-
-    if (utils.getBidIdParameter('content_height', bid.params.video) == '') {
-      if (window.document.getElementById(videoSlotDivId).querySelectorAll('video').length == 0) {
-        bid.params.video['content_height'] = window.document.getElementById(videoSlotDivId).offsetHeight;
-      } else {
-        bid.params.video['content_height'] = window.document.getElementById(videoSlotDivId).querySelectorAll('video')[0].offsetHeight;
-      }
-    }
-
-    utils.logWarn(ORTB_VERSION);
 
     return true;
   },
@@ -75,28 +57,31 @@ export const spec = {
     const page = loc.href;
     const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
 
-    let siteId = '';
-    let bid = bidderRequest.bids[0];
-    let channelId = bid.params.video.channel_id;
+    const siteId = '';
+    const bid = bidderRequest.bids[0];
+    const channelId = bid.params.video.channel_id;
     let pubcid = null;
 
-    const contentWidth = utils.getBidIdParameter('content_width', bid.params.video);
-    const contentHeight = utils.getBidIdParameter('content_height', bid.params.video);
+    const videoSlotDiv = window.document.getElementById(utils.getBidIdParameter('video_slot', bid.params.video));
+    const hasVideoElement = videoSlotDiv.querySelectorAll('video').length;
+    const contentWidth = utils.getBidIdParameter('content_width', bid.params.video) ||
+      (hasVideoElement
+        ? videoSlotDiv.querySelectorAll('video')[0].offsetWidth
+        : videoSlotDiv.offsetWidth);
+    const contentHeight = utils.getBidIdParameter('content_height', bid.params.video) ||
+      (hasVideoElement
+        ? videoSlotDiv.querySelectorAll('video')[0].offsetHeight
+        : videoSlotDiv.offsetHeight);
 
     const spotxImps = bidRequests.map(function(bid) {
       const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
 
-      // Mandatory
-      const adMute = utils.getBidIdParameter('ad_mute', bid.params.video) != '' ? 0 + Boolean(utils.getBidIdParameter('ad_mute', bid.params.video)) : 0;
-      const hideSkin = utils.getBidIdParameter('hide_skin', bid.params.video) != '' ? 0 + Boolean(utils.getBidIdParameter('hide_skin', bid.params.video)) : 0;
-
-      let ext = {
+      const ext = {
         player_width: contentWidth,
         player_height: contentHeight,
         sdk_name: 'Prebid 1+',
-        ad_mute: adMute,
-        ad_unit: 'outstream',
-        hide_skin: hideSkin,
+        ad_mute: +!!utils.getBidIdParameter('ad_mute', bid.params.video),
+        hide_skin: +!!utils.getBidIdParameter('hide_skin', bid.params.video),
         content_page_url: page,
         versionOrtb: ORTB_VERSION,
         bidId: bid.bidId,
@@ -108,6 +93,10 @@ export const spec = {
         ext.ad_volume = utils.getBidIdParameter('ad_volume', bid.params.video);
       }
 
+      if (utils.getBidIdParameter('ad_unit', bid.params.video) != '') {
+        ext.ad_unit = utils.getBidIdParameter('ad_unit', bid.params.video);
+      }
+
       if (utils.getBidIdParameter('outstreamFunction', bid.params.video) != '') {
         ext.outstreamFunction = utils.getBidIdParameter('outstreamFunction', bid.params.video);
       }
@@ -116,10 +105,10 @@ export const spec = {
         ext.custom = utils.getBidIdParameter('custom', bid.params.video);
       }
 
-      const mimes = utils.getBidIdParameter('mimes', bid.params.video) != '' ? utils.getBidIdParameter('mimes', bid.params.video) : ['application/javascript', 'video/mp4', 'video/webm'];
+      const mimes = utils.getBidIdParameter('mimes', bid.params.video) || ['application/javascript', 'video/mp4', 'video/webm'];
 
-      let spotxImp = {
-        id: Date.now(), // Use timestamp as identifier
+      const spotxImp = {
+        id: Date.now(),
         secure: secure,
         video: {
           w: contentWidth,
@@ -178,7 +167,7 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       userExt.consent = bidderRequest.gdprConsent.consentString;
 
-      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+      if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
         requestPayload.regs = {
           ext: {
             gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)

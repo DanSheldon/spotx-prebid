@@ -85,8 +85,7 @@ export const spec = {
         content_page_url: page,
         versionOrtb: ORTB_VERSION,
         bidId: bid.bidId,
-        videoSlot: bid.params.video.video_slot,
-        outstream_static: bid.params.video.outstream_static ? bid.params.video.outstream_static : false
+        videoSlot: bid.params.video.video_slot
       };
 
       if (utils.getBidIdParameter('ad_volume', bid.params.video) != '') {
@@ -242,7 +241,6 @@ export const spec = {
                 player_width: request.video.ext.player_width,
                 player_height: request.video.ext.player_height,
                 content_page_url: request.video.ext.content_page_url,
-                outstream_static: request.video.ext.outstream_static,
                 ad_mute: request.video.ext.ad_mute,
                 outstreamFunction: request.video.ext.outstreamFunction
               }
@@ -306,6 +304,40 @@ export const spec = {
 function outstreamRender(bid) {
   if (bid.renderer.config.outstreamFunction != null && typeof bid.renderer.config.outstreamFunction === 'function') {
     bid.renderer.config.outstreamFunction(bid);
+  } else {
+    try {
+      utils.logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');
+      const script = window.document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = '//js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
+      script.setAttribute('data-spotx_channel_id', '' + bid.channel_id);
+      script.setAttribute('data-spotx_vast_url', '' + bid.vastUrl);
+      script.setAttribute('data-spotx_content_width', bid.renderer.config.player_width);
+      script.setAttribute('data-spotx_content_height', bid.renderer.config.player_height);
+      script.setAttribute('data-spotx_content_page_url', bid.renderer.config.content_page_url);
+      if (bid.renderer.config.ad_mute) {
+        script.setAttribute('data-spotx_ad_mute', '0');
+      }
+      script.setAttribute('data-spotx_ad_unit', 'incontent');
+      script.setAttribute('data-spotx_collapse', '0');
+      script.setAttribute('data-spotx_autoplay', '1');
+      script.setAttribute('data-spotx_blocked_autoplay_override_mode', '1');
+      script.setAttribute('data-spotx_video_slot_can_autoplay', '1');
+
+      if (bid.renderer.config.inIframe && window.document.getElementById(bid.renderer.config.inIframe).nodeName == 'IFRAME') {
+        const rawframe = window.document.getElementById(bid.renderer.config.inIframe);
+        let framedoc = rawframe.contentDocument;
+        if (!framedoc && rawframe.contentWindow) {
+          framedoc = rawframe.contentWindow.document;
+        }
+        framedoc.body.appendChild(script);
+      } else {
+        window.document.getElementById(bid.video_slot).appendChild(script);
+        // bid.renderer.config.outstreamFunction(bid);
+      }
+    } catch (err) {
+      utils.logError('[SPOTX][renderer] ' + err.message)
+    }
   }
 }
 

@@ -333,7 +333,6 @@ function outstreamRender(bid) {
         framedoc.body.appendChild(script);
       } else {
         window.document.getElementById(bid.video_slot).appendChild(script);
-        // bid.renderer.config.outstreamFunction(bid);
       }
     } catch (err) {
       utils.logError('[SPOTX][renderer] ' + err.message)

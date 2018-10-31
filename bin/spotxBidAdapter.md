@@ -15,16 +15,6 @@ This adapter requires setup and approval from the SpotX team.
 # Test Parameters
 ```
     var adUnits = [{
-        code: 'video1',
-        mediaTypes: {
-            banner: {
-                sizes: sizes
-            },
-            video: {
-                context: 'outstream',
-                playerSize: [640, 480]
-            }
-        },
         bids: [{
                 bidder: 'spotx',
                 params: {

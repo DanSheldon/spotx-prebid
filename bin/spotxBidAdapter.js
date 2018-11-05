@@ -65,13 +65,13 @@ export const spec = {
     const videoSlotDiv = window.document.getElementById(utils.getBidIdParameter('video_slot', bid.params.video));
     const hasVideoElement = videoSlotDiv.querySelectorAll('video').length;
     const contentWidth = utils.getBidIdParameter('content_width', bid.params.video) ||
-      (hasVideoElement ?
-      videoSlotDiv.querySelectorAll('video')[0].offsetWidth :
-      videoSlotDiv.offsetWidth);
+      (hasVideoElement
+        ? videoSlotDiv.querySelectorAll('video')[0].offsetWidth
+        : videoSlotDiv.offsetWidth);
     const contentHeight = utils.getBidIdParameter('content_height', bid.params.video) ||
-      (hasVideoElement ?
-      videoSlotDiv.querySelectorAll('video')[0].offsetHeight :
-      videoSlotDiv.offsetHeight);
+      (hasVideoElement
+        ? videoSlotDiv.querySelectorAll('video')[0].offsetHeight
+        : videoSlotDiv.offsetHeight);
 
     const spotxImps = bidRequests.map(function(bid) {
       const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
@@ -80,8 +80,8 @@ export const spec = {
         player_width: contentWidth,
         player_height: contentHeight,
         sdk_name: 'Prebid 1+',
-        ad_mute: !!utils.getBidIdParameter('ad_mute', bid.params.video),
-        hide_skin: !!utils.getBidIdParameter('hide_skin', bid.params.video),
+        ad_mute: +!!utils.getBidIdParameter('ad_mute', bid.params.video),
+        hide_skin: +!!utils.getBidIdParameter('hide_skin', bid.params.video),
         content_page_url: page,
         versionOrtb: ORTB_VERSION,
         bidId: bid.bidId,

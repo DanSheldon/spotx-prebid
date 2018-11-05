@@ -53,9 +53,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    const loc = utils.getTopWindowLocation();
-    const page = loc.href;
-    const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
+    const page = bidderRequest.refererInfo.referer;
+    const isPageSecure = !!page.match(/^https:/)
 
     const siteId = '';
     const bid = bidderRequest.bids[0];
@@ -286,19 +285,7 @@ export const spec = {
     }
 
     return bidResponses;
-  },
-
-  /**
-   * If the publisher allows user-sync activity, the platform will call this function and the adapter may register pixels and/or iframe user syncs.
-   *
-   */
-  getUserSyncs: function(syncOptions, serverResponses) {},
-
-  /**
-   * If the adapter timed out for an auction, the platform will call this function and the adapter may register timeout.
-   *
-   */
-  onTimeout: function(timeoutData) {}
+  }
 }
 
 function outstreamRender(bid) {

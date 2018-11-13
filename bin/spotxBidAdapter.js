@@ -231,7 +231,9 @@ export const spec = {
             bid.height = spotxBid.h;
           }
 
-          if (request.video.ext.ad_unit == 'outstream') {
+          const videoMediaType = utils.deepAccess(bidderRequest, 'mediaTypes.video');
+          const context = utils.deepAccess(bidderRequest, 'mediaTypes.video.context');
+          if ((bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) || (request.video.ext.ad_unit == 'outstream')) {
             const renderer = Renderer.install({
               id: 0,
               url: '//',
@@ -268,22 +270,7 @@ export const spec = {
         })
       });
     }
-
-    // Make sure hb_adid will be correct
-    if (bidderRequest && bidderRequest.bidRequest && bidderRequest.bidRequest.bids) {
-      utils._each(bidderRequest.bidRequest.bids, function(spotxBid) {
-        let adId = null;
-        for (let i = 0; i < bidResponses.length; i++) {
-          if (bidResponses[i].requestId == spotxBid.bidId) {
-            adId = bidResponses[i].cache_key;
-          }
-        };
-        if (adId != null) {
-          spotxBid.bidId = adId;
-        }
-      });
-    }
-
+    
     return bidResponses;
   }
 }

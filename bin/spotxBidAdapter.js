@@ -74,8 +74,12 @@ export const spec = {
         ext.ad_unit = utils.getBidIdParameter('ad_unit', bid.params.video);
       }
 
-      if (utils.getBidIdParameter('outstreamFunction', bid.params.video) != '') {
-        ext.outstreamFunction = utils.getBidIdParameter('outstreamFunction', bid.params.video);
+      if (utils.getBidIdParameter('outstream_options', bid.params.video) != '') {
+        ext.outstream_options = utils.getBidIdParameter('outstream_options', bid.params.video);
+      }
+
+      if (utils.getBidIdParameter('outstream_function', bid.params.video) != '') {
+        ext.outstream_function = utils.getBidIdParameter('outstream_function', bid.params.video);
       }
 
       if (utils.getBidIdParameter('custom', bid.params.video) != '') {
@@ -222,7 +226,8 @@ export const spec = {
                 player_height: request.video.ext.player_height,
                 content_page_url: request.video.ext.content_page_url,
                 ad_mute: request.video.ext.ad_mute,
-                outstreamFunction: request.video.ext.outstreamFunction
+                outstream_options: request.video.ext.outstream_options,
+                outstream_function: request.video.ext.outstream_function
               }
             });
 
@@ -260,13 +265,17 @@ function outstreamRender(bid) {
   } else {
     try {
       utils.logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');
+      const videoSlot = utils.getBidIdParameter('video_slot', bid.renderer.config.outstream_options);
+      const contentWidth = utils.getBidIdParameter('content_width', bid.renderer.config.outstream_options);
+      const contentHeight = utils.getBidIdParameter('content_height', bid.renderer.config.outstream_options);
+      const inIframe = utils.getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);
       const script = window.document.createElement('script');
       script.type = 'text/javascript';
       script.src = '//js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
       script.setAttribute('data-spotx_channel_id', '' + bid.channel_id);
       script.setAttribute('data-spotx_vast_url', '' + bid.vastUrl);
-      script.setAttribute('data-spotx_content_width', bid.renderer.config.player_width);
-      script.setAttribute('data-spotx_content_height', bid.renderer.config.player_height);
+      script.setAttribute('data-spotx_content_width', contentWidth);
+      script.setAttribute('data-spotx_content_height', contentHeight);
       script.setAttribute('data-spotx_content_page_url', bid.renderer.config.content_page_url);
       if (bid.renderer.config.ad_mute) {
         script.setAttribute('data-spotx_ad_mute', '0');
@@ -277,15 +286,15 @@ function outstreamRender(bid) {
       script.setAttribute('data-spotx_blocked_autoplay_override_mode', '1');
       script.setAttribute('data-spotx_video_slot_can_autoplay', '1');
 
-      if (bid.renderer.config.inIframe && window.document.getElementById(bid.renderer.config.inIframe).nodeName == 'IFRAME') {
-        const rawframe = window.document.getElementById(bid.renderer.config.inIframe);
+      if (window.document.getElementById(inIframe).nodeName == 'IFRAME') {
+        const rawframe = window.document.getElementById(inIframe);
         let framedoc = rawframe.contentDocument;
         if (!framedoc && rawframe.contentWindow) {
           framedoc = rawframe.contentWindow.document;
         }
         framedoc.body.appendChild(script);
       } else {
-        window.document.getElementById(bid.video_slot).appendChild(script);
+        window.document.getElementById(videoSlot).appendChild(script);
       }
     } catch (err) {
       utils.logError('[SPOTX][renderer] ' + err.message)

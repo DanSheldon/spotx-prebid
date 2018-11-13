@@ -261,7 +261,7 @@ export const spec = {
 
 function outstreamRender(bid) {
   if (bid.renderer.config.outstream_function != null && typeof bid.renderer.config.outstream_function === 'function') {
-    bid.renderer.config.outstreamFunction(bid);
+    bid.renderer.config.outstream_function(bid);
   } else {
     try {
       utils.logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');

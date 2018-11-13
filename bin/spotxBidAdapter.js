@@ -53,9 +53,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    const loc = utils.getTopWindowLocation();
-    const page = loc.href;
-    const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
+    const page = bidderRequest.refererInfo.referer;
+    const isPageSecure = !!page.match(/^https:/)
 
     const siteId = '';
     const bid = bidderRequest.bids[0];
@@ -232,7 +231,9 @@ export const spec = {
             bid.height = spotxBid.h;
           }
 
-          if (request.video.ext.ad_unit == 'outstream') {
+          const videoMediaType = utils.deepAccess(bidderRequest, 'mediaTypes.video');
+          const context = utils.deepAccess(bidderRequest, 'mediaTypes.video.context');
+          if ((bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) || (request.video.ext.ad_unit == 'outstream')) {
             const renderer = Renderer.install({
               id: 0,
               url: '//',
@@ -269,36 +270,9 @@ export const spec = {
         })
       });
     }
-
-    // Make sure hb_adid will be correct
-    if (bidderRequest && bidderRequest.bidRequest && bidderRequest.bidRequest.bids) {
-      utils._each(bidderRequest.bidRequest.bids, function(spotxBid) {
-        let adId = null;
-        for (let i = 0; i < bidResponses.length; i++) {
-          if (bidResponses[i].requestId == spotxBid.bidId) {
-            adId = bidResponses[i].cache_key;
-          }
-        };
-        if (adId != null) {
-          spotxBid.bidId = adId;
-        }
-      });
-    }
-
+    
     return bidResponses;
-  },
-
-  /**
-   * If the publisher allows user-sync activity, the platform will call this function and the adapter may register pixels and/or iframe user syncs.
-   *
-   */
-  getUserSyncs: function(syncOptions, serverResponses) {},
-
-  /**
-   * If the adapter timed out for an auction, the platform will call this function and the adapter may register timeout.
-   *
-   */
-  onTimeout: function(timeoutData) {}
+  }
 }
 
 function outstreamRender(bid) {

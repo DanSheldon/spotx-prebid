@@ -16,18 +16,20 @@ This adapter requires setup and approval from the SpotX team.
 ```
     var adUnits = [{
         bids: [{
-                bidder: 'spotx',
-                params: {
-                    placementId: "123456789",
-                    video: {
-                        channel_id: 79391,
+            bidder: 'spotx',
+            params: {
+                video: {
+                    channel_id: 79391,
+                    ad_unit: 'outstream',
+                    outstream_options: {
                         video_slot: 'video1',
-                        slot: 'video1',
-                        ad_unit: 'outstream'
-                    }
+                        content_width: 300,
+                        content_height: 250
+                    },
+                    outstream_function: myOutstreamFunction // Override the default outstream renderer by this referenced function
                 }
             }
-        ]
+        }]
     }];
 
 ```

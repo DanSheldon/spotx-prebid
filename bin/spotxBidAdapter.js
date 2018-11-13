@@ -260,7 +260,7 @@ export const spec = {
 }
 
 function outstreamRender(bid) {
-  if (bid.renderer.config.outstreamFunction != null && typeof bid.renderer.config.outstreamFunction === 'function') {
+  if (bid.renderer.config.outstream_function != null && typeof bid.renderer.config.outstream_function === 'function') {
     bid.renderer.config.outstreamFunction(bid);
   } else {
     try {

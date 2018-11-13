@@ -286,7 +286,7 @@ function outstreamRender(bid) {
       script.setAttribute('data-spotx_blocked_autoplay_override_mode', '1');
       script.setAttribute('data-spotx_video_slot_can_autoplay', '1');
 
-      if (window.document.getElementById(inIframe).nodeName == 'IFRAME') {
+      if (inIframe && window.document.getElementById(inIframe).nodeName == 'IFRAME') {
         const rawframe = window.document.getElementById(inIframe);
         let framedoc = rawframe.contentDocument;
         if (!framedoc && rawframe.contentWindow) {

@@ -19,7 +19,7 @@ This adapter requires setup and approval from the SpotX team.
         mediaTypes: {
             video: {
                 context: 'outstream', // 'instream' or 'outstream'
-                playerSize: [[640, 480]]
+                playerSize: [640, 480]
             }
         },
         bids: [{

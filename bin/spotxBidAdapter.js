@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 import { Renderer } from 'src/Renderer';
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import { VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'spotx';
 const URL = '//search.spotxchange.com/openrtb/2.3/dados/';
@@ -10,7 +10,7 @@ const ORTB_VERSION = '2.3';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['spotx'],
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -20,14 +20,40 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    if (bid && (typeof bid.params !== 'object' || typeof bid.params.video !== 'object')) {
-      utils.logMessage(BIDDER_CODE + ': video params is missing or is incorrect');
+    if (bid && typeof bid.params !== 'object') {
+      utils.logError(BIDDER_CODE + ': params is not defined or is incorrect in the bidder settings.');
       return false;
     }
 
-    if (bid.params.video.channel_id === undefined) {
-      utils.logMessage(BIDDER_CODE + ': channel_id is not present in bidder params');
+    if (!utils.deepAccess(bid, 'mediaTypes.video')) {
+      utils.logError(BIDDER_CODE + ': mediaTypes.video is not present in the bidder settings.');
       return false;
+    }
+
+    const playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
+    if (!playerSize || !utils.isArray(playerSize)) {
+      utils.logError(BIDDER_CODE + ': mediaTypes.video.playerSize is not defined in the bidder settings.');
+      return false;
+    }
+
+    if (!utils.getBidIdParameter('channel_id', bid.params)) {
+      utils.logError(BIDDER_CODE + ': channel_id is not present in bidder params');
+      return false;
+    }
+
+    const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+    const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+    if ((bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) || utils.getBidIdParameter('ad_unit', bid.params) == 'outstream') {
+      if (!utils.getBidIdParameter('outstream_function', bid.params)) {
+        if (!utils.getBidIdParameter('outstream_options', bid.params)) {
+          utils.logError(BIDDER_CODE + ': please define outstream_options parameter or override the default SpotX outstream rendering by defining your own Outstream function using field outstream_function.');
+          return false;
+        }
+        if (!utils.getBidIdParameter('video_slot', bid.params.outstream_options) || !utils.getBidIdParameter('content_width', bid.params.outstream_options) || !utils.getBidIdParameter('content_height', bid.params.outstream_options)) {
+          utils.logError(BIDDER_CODE + ': please define parameters video_slot, content_width and content_height for object outstream_options in the configuration.');
+          return false;
+        }
+      }
     }
 
     return true;
@@ -46,11 +72,12 @@ export const spec = {
 
     const siteId = '';
     const bid = bidderRequest.bids[0];
-    const channelId = bid.params.video.channel_id;
+    const channelId = utils.getBidIdParameter('channel_id', bid.params);
     let pubcid = null;
 
-    const contentWidth = utils.getBidIdParameter('content_width', bid.params.video) || Math.max(window.innerWidth || body.clientWidth || 0);
-    const contentHeight = utils.getBidIdParameter('content_height', bid.params.video) || Math.max(window.innerHeight || body.clientHeight || 0);
+    const playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
+    const contentWidth = playerSize[0][0];
+    const contentHeight = playerSize[0][1];
 
     const spotxImps = bidRequests.map(function(bid) {
       const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
@@ -59,34 +86,34 @@ export const spec = {
         player_width: contentWidth,
         player_height: contentHeight,
         sdk_name: 'Prebid 1+',
-        ad_mute: +!!utils.getBidIdParameter('ad_mute', bid.params.video),
-        hide_skin: +!!utils.getBidIdParameter('hide_skin', bid.params.video),
+        ad_mute: +!!utils.getBidIdParameter('ad_mute', bid.params),
+        hide_skin: +!!utils.getBidIdParameter('hide_skin', bid.params),
         content_page_url: page,
         versionOrtb: ORTB_VERSION,
         bidId: bid.bidId
       };
 
-      if (utils.getBidIdParameter('ad_volume', bid.params.video) != '') {
-        ext.ad_volume = utils.getBidIdParameter('ad_volume', bid.params.video);
+      if (utils.getBidIdParameter('ad_volume', bid.params) != '') {
+        ext.ad_volume = utils.getBidIdParameter('ad_volume', bid.params);
       }
 
-      if (utils.getBidIdParameter('ad_unit', bid.params.video) != '') {
-        ext.ad_unit = utils.getBidIdParameter('ad_unit', bid.params.video);
+      if (utils.getBidIdParameter('ad_unit', bid.params) != '') {
+        ext.ad_unit = utils.getBidIdParameter('ad_unit', bid.params);
       }
 
-      if (utils.getBidIdParameter('outstream_options', bid.params.video) != '') {
-        ext.outstream_options = utils.getBidIdParameter('outstream_options', bid.params.video);
+      if (utils.getBidIdParameter('outstream_options', bid.params) != '') {
+        ext.outstream_options = utils.getBidIdParameter('outstream_options', bid.params);
       }
 
-      if (utils.getBidIdParameter('outstream_function', bid.params.video) != '') {
-        ext.outstream_function = utils.getBidIdParameter('outstream_function', bid.params.video);
+      if (utils.getBidIdParameter('outstream_function', bid.params) != '') {
+        ext.outstream_function = utils.getBidIdParameter('outstream_function', bid.params);
       }
 
-      if (utils.getBidIdParameter('custom', bid.params.video) != '') {
-        ext.custom = utils.getBidIdParameter('custom', bid.params.video);
+      if (utils.getBidIdParameter('custom', bid.params) != '') {
+        ext.custom = utils.getBidIdParameter('custom', bid.params);
       }
 
-      const mimes = utils.getBidIdParameter('mimes', bid.params.video) || ['application/javascript', 'video/mp4', 'video/webm'];
+      const mimes = utils.getBidIdParameter('mimes', bid.params) || ['application/javascript', 'video/mp4', 'video/webm'];
 
       const spotxImp = {
         id: Date.now(),
@@ -103,8 +130,8 @@ export const spec = {
         spotxImp.bidfloor = utils.getBidIdParameter('price_floor', bid.params);
       }
 
-      if (utils.getBidIdParameter('start_delay', bid.params.video) != '') {
-        spotxImp.video.startdelay = 0 + Boolean(utils.getBidIdParameter('start_delay', bid.params.video));
+      if (utils.getBidIdParameter('start_delay', bid.params) != '') {
+        spotxImp.video.startdelay = 0 + Boolean(utils.getBidIdParameter('start_delay', bid.params));
       }
 
       if (bid.crumbs && bid.crumbs.pubcid) {

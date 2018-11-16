@@ -15,19 +15,24 @@ This adapter requires setup and approval from the SpotX team.
 # Test Parameters
 ```
     var adUnits = [{
+        code: 'something',
+        mediaTypes: {
+            video: {
+                context: 'outstream', // 'instream' or 'outstream'
+                playerSize: [[640, 480]]
+            }
+        },
         bids: [{
             bidder: 'spotx',
             params: {
-                video: {
-                    channel_id: 79391,
-                    ad_unit: 'outstream',
-                    outstream_options: {
-                        video_slot: 'video1',
-                        content_width: 300,
-                        content_height: 250
-                    },
-                    outstream_function: myOutstreamFunction // Override the default outstream renderer by this referenced function
-                }
+                channel_id: 79391,
+                ad_unit: 'outstream',
+                outstream_options: { // Needed for the default outstream renderer. Fields video_slot/content_width/content_height are mandatory
+                    video_slot: 'video1',
+                    content_width: 300,
+                    content_height: 250
+                },
+                outstream_function: myOutstreamFunction // Override the default outstream renderer by this referenced function
             }
         }]
     }];

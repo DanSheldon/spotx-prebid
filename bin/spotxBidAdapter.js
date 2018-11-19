@@ -49,8 +49,8 @@ export const spec = {
           utils.logError(BIDDER_CODE + ': please define outstream_options parameter or override the default SpotX outstream rendering by defining your own Outstream function using field outstream_function.');
           return false;
         }
-        if (!utils.getBidIdParameter('video_slot', bid.params.outstream_options) || !utils.getBidIdParameter('content_width', bid.params.outstream_options) || !utils.getBidIdParameter('content_height', bid.params.outstream_options)) {
-          utils.logError(BIDDER_CODE + ': please define parameters video_slot, content_width and content_height for object outstream_options in the configuration.');
+        if (!utils.getBidIdParameter('slot', bid.params.outstream_options) || (!utils.getBidIdParameter('content_width', bid.params.outstream_options) && !utils.getBidIdParameter('content_height', bid.params.outstream_options))) {
+          utils.logError(BIDDER_CODE + ': please define parameters slot or content_width and content_height for object outstream_options in the configuration.');
           return false;
         }
       }
@@ -231,7 +231,7 @@ export const spec = {
             netRevenue: true,
             channel_id: serverResponseBody.id,
             cache_key: spotxBid.ext.cache_key,
-            video_slot: request.video.ext.videoSlot
+            slot: request.video.ext.slot
           };
 
           if (request.video) {
@@ -292,7 +292,7 @@ function outstreamRender(bid) {
   } else {
     try {
       utils.logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');
-      const videoSlot = utils.getBidIdParameter('video_slot', bid.renderer.config.outstream_options);
+      const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
       const contentWidth = utils.getBidIdParameter('content_width', bid.renderer.config.outstream_options);
       const contentHeight = utils.getBidIdParameter('content_height', bid.renderer.config.outstream_options);
       const inIframe = utils.getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);

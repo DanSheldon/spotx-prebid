@@ -27,8 +27,8 @@ This adapter requires setup and approval from the SpotX team.
             params: {
                 channel_id: 79391,
                 ad_unit: 'outstream',
-                outstream_options: { // Needed for the default outstream renderer. Fields video_slot/content_width/content_height are mandatory
-                    video_slot: 'video1',
+                outstream_options: { // Needed for the default outstream renderer. Fields slot or content_width/content_height are mandatory
+                    slot: 'adContainer1',
                     content_width: 300,
                     content_height: 250
                 },

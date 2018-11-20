@@ -49,8 +49,8 @@ export const spec = {
           utils.logError(BIDDER_CODE + ': please define outstream_options parameter or override the default SpotX outstream rendering by defining your own Outstream function using field outstream_function.');
           return false;
         }
-        if (!(utils.getBidIdParameter('slot', bid.params.outstream_options) && utils.getBidIdParameter('content_width', bid.params.outstream_options) && utils.getBidIdParameter('content_height', bid.params.outstream_options))) {
-          utils.logError(BIDDER_CODE + ': please define parameters slot, content_width and content_height for outstream_options object in the configuration.');
+        if (!utils.getBidIdParameter('slot', bid.params.outstream_options)) {
+          utils.logError(BIDDER_CODE + ': please define parameters slot outstream_options object in the configuration.');
           return false;
         }
       }
@@ -306,8 +306,6 @@ function outstreamRender(bid) {
       dataSpotXParams.push({ 'name': 'data-spotx_ad_unit', 'value': 'incontent' });
 
       utils.logMessage('[SPOTX][renderer] Default beahavior');
-      dataSpotXParams.push({ 'name': 'data-spotx_content_width', 'value': utils.getBidIdParameter('content_width', bid.renderer.config.outstream_options) });
-      dataSpotXParams.push({ 'name': 'data-spotx_content_height', 'value': utils.getBidIdParameter('content_height', bid.renderer.config.outstream_options) });
       if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
         dataSpotXParams.push({ 'name': 'data-spotx_ad_mute', 'value': '0' });
       }

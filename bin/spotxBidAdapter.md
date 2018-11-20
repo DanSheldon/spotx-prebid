@@ -31,6 +31,7 @@ This adapter requires setup and approval from the SpotX team.
                     video_slot: 'video1',
                     content_width: 300,
                     content_height: 250
+                }
             }
         }]
     }];

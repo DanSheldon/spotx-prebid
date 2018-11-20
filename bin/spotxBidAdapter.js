@@ -299,57 +299,41 @@ function outstreamRender(bid) {
       const script = window.document.createElement('script');
       script.type = 'text/javascript';
       script.src = '//js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
-      script.setAttribute('data-spotx_channel_id', '' + bid.channel_id);
-      script.setAttribute('data-spotx_vast_url', '' + bid.vastUrl);
-      script.setAttribute('data-spotx_content_page_url', bid.renderer.config.content_page_url);
-      script.setAttribute('data-spotx_ad_unit', 'incontent');
+      let dataSpotXParams = [];
+      dataSpotXParams.push({ 'name': 'data-spotx_channel_id', 'value': '' + bid.channel_id });
+      dataSpotXParams.push({ 'name': 'data-spotx_vast_url', 'value': '' + bid.vastUrl });
+      dataSpotXParams.push({ 'name': 'data-spotx_content_page_url', 'value': bid.renderer.config.content_page_url });
+      dataSpotXParams.push({ 'name': 'data-spotx_ad_unit', 'value': 'incontent' });
+
+      utils.logMessage('[SPOTX][renderer] Default beahavior');
+      dataSpotXParams.push({ 'name': 'data-spotx_content_width', 'value': utils.getBidIdParameter('content_width', bid.renderer.config.outstream_options) });
+      dataSpotXParams.push({ 'name': 'data-spotx_content_height', 'value': utils.getBidIdParameter('content_height', bid.renderer.config.outstream_options) });
+      if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
+        dataSpotXParams.push({ 'name': 'data-spotx_ad_mute', 'value': '0' });
+      }
+      dataSpotXParams.push({ 'name': 'data-spotx_collapse', 'value': '0' });
+      dataSpotXParams.push({ 'name': 'data-spotx_autoplay', 'value': '1' });
+      dataSpotXParams.push({ 'name': 'data-spotx_blocked_autoplay_override_mode', 'value': '1' });
+      dataSpotXParams.push({ 'name': 'data-spotx_video_slot_can_autoplay', 'value': '1' });
 
       const customOverride = utils.getBidIdParameter('custom_override', bid.renderer.config.outstream_options);
       if (customOverride && utils.isArray(customOverride)) {
-        let contentWidth = false;
-        let contentHeight = false;
-        let contentContainerId = false;
         utils.logMessage('[SPOTX][renderer] Custom beahavior: please make sure all the options are properly setup.');
         customOverride.forEach(function(elt) {
           if (!utils.getBidIdParameter('name', elt) && !utils.getBidIdParameter('value', elt)) {
             utils.logWarn('[SPOTX][renderer] Custom beahavior: this option is wrong: ' + elt);
             return;
           }
-          if (elt.name === 'content_width') {
-            contentWidth = true;
-          }
-          if (elt.name === 'content_height') {
-            contentHeight = true;
-          }
-          if (elt.name === 'content_container_id') {
-            contentContainerId = true;
-          }
           if (elt.name === 'channel_id' || elt.name === 'vast_url' || elt.name === 'content_page_url' || elt.name === 'ad_unit') {
             utils.logWarn('[SPOTX][renderer] Custom beahavior: following option cannot be overrided: ' + elt.name);
             return;
           }
-          script.setAttribute('data-spotx_' + elt.name, elt.value);
+          dataSpotXParams.push({ 'name': 'data-spotx_' + elt.name, 'value': elt.value });
         });
-        if (!contentWidth) {
-          script.setAttribute('data-spotx_content_width', utils.getBidIdParameter('content_width', bid.renderer.config.outstream_options));
-        }
-        if (!contentHeight) {
-          script.setAttribute('data-spotx_content_height', utils.getBidIdParameter('content_height', bid.renderer.config.outstream_options));
-        }
-        if (!contentContainerId) {
-          script.setAttribute('data-spotx_content_container_id', utils.getBidIdParameter('slot', bid.renderer.config.outstream_options));
-        }
-      } else {
-        utils.logMessage('[SPOTX][renderer] Default beahavior');
-        script.setAttribute('data-spotx_content_width', utils.getBidIdParameter('content_width', bid.renderer.config.outstream_options));
-        script.setAttribute('data-spotx_content_height', utils.getBidIdParameter('content_height', bid.renderer.config.outstream_options));
-        if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
-          script.setAttribute('data-spotx_ad_mute', '0');
-        }
-        script.setAttribute('data-spotx_collapse', '0');
-        script.setAttribute('data-spotx_autoplay', '1');
-        script.setAttribute('data-spotx_blocked_autoplay_override_mode', '1');
-        script.setAttribute('data-spotx_video_slot_can_autoplay', '1');
+      }
+
+      for (let index in dataSpotXParams) {
+        script.setAttribute(dataSpotXParams[index].name, dataSpotXParams[index].value);
       }
 
       const inIframe = utils.getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);

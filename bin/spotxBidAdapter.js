@@ -299,24 +299,24 @@ function outstreamRender(bid) {
       const script = window.document.createElement('script');
       script.type = 'text/javascript';
       script.src = '//js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
-      let dataSpotXParams = [];
-      dataSpotXParams.push({ 'name': 'data-spotx_channel_id', 'value': '' + bid.channel_id });
-      dataSpotXParams.push({ 'name': 'data-spotx_vast_url', 'value': '' + bid.vastUrl });
-      dataSpotXParams.push({ 'name': 'data-spotx_content_page_url', 'value': bid.renderer.config.content_page_url });
-      dataSpotXParams.push({ 'name': 'data-spotx_ad_unit', 'value': 'incontent' });
+      let dataSpotXParams = {};
+      dataSpotXParams['data-spotx_channel_id'] = '' + bid.channel_id;
+      dataSpotXParams['data-spotx_vast_url'] = '' + bid.vastUrl;
+      dataSpotXParams['data-spotx_content_page_url'] = bid.renderer.config.content_page_url;
+      dataSpotXParams['data-spotx_ad_unit'] = 'incontent';
 
       utils.logMessage('[SPOTX][renderer] Default beahavior');
       if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
-        dataSpotXParams.push({ 'name': 'data-spotx_ad_mute', 'value': '0' });
+        dataSpotXParams['data-spotx_ad_mute'] = '0';
       }
-      dataSpotXParams.push({ 'name': 'data-spotx_collapse', 'value': '0' });
-      dataSpotXParams.push({ 'name': 'data-spotx_autoplay', 'value': '1' });
-      dataSpotXParams.push({ 'name': 'data-spotx_blocked_autoplay_override_mode', 'value': '1' });
-      dataSpotXParams.push({ 'name': 'data-spotx_video_slot_can_autoplay', 'value': '1' });
+      dataSpotXParams['data-spotx_collapse'] = '0';
+      dataSpotXParams['data-spotx_autoplay'] = '1';
+      dataSpotXParams['data-spotx_blocked_autoplay_override_mode'] = '1';
+      dataSpotXParams['data-spotx_video_slot_can_autoplay'] = '1';
 
       const customOverride = utils.getBidIdParameter('custom_override', bid.renderer.config.outstream_options);
       if (customOverride && utils.isArray(customOverride)) {
-        utils.logMessage('[SPOTX][renderer] Custom beahavior: please make sure all the options are properly setup.');
+        utils.logMessage('[SPOTX][renderer] Custom beahavior.');
         customOverride.forEach(function(elt) {
           if (!utils.getBidIdParameter('name', elt) && !utils.getBidIdParameter('value', elt)) {
             utils.logWarn('[SPOTX][renderer] Custom beahavior: this option is wrong: ' + elt);
@@ -326,12 +326,14 @@ function outstreamRender(bid) {
             utils.logWarn('[SPOTX][renderer] Custom beahavior: following option cannot be overrided: ' + elt.name);
             return;
           }
-          dataSpotXParams.push({ 'name': 'data-spotx_' + elt.name, 'value': elt.value });
+          dataSpotXParams['data-spotx_' + elt.name] = elt.value;
         });
       }
 
-      for (let index in dataSpotXParams) {
-        script.setAttribute(dataSpotXParams[index].name, dataSpotXParams[index].value);
+      for (let key in dataSpotXParams) {
+        if (dataSpotXParams.hasOwnProperty(key)) {
+          script.setAttribute(key, dataSpotXParams[key]);
+        }
       }
 
       const inIframe = utils.getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);

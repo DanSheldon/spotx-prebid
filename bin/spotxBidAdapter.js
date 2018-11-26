@@ -269,7 +269,7 @@ export const spec = {
             netRevenue: true,
             channel_id: serverResponseBody.id,
             cache_key: spotxBid.ext.cache_key,
-            video_slot: request.video.ext.videoSlot
+            slot: request.video.ext.slot
           };
 
           if (request.video) {

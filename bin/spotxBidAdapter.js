@@ -268,8 +268,7 @@ export const spec = {
             ttl: 360,
             netRevenue: true,
             channel_id: serverResponseBody.id,
-            cache_key: spotxBid.ext.cache_key,
-            video_slot: request.video.ext.videoSlot
+            cache_key: spotxBid.ext.cache_key
           };
 
           if (request.video) {

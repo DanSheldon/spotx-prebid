@@ -137,15 +137,7 @@ export const spec = {
             }],
             cur: preMarketBid['currency'],
             ext: {
-              event_log: [{
-                ad_id: preMarketBid['deal_id'],
-                id: 3,
-                ts: parseFloat(Date.now() / 1000)
-              }, {
-                ad_id: preMarketBid['deal_id'],
-                id: 5,
-                ts: parseFloat(Date.now() / 1000)
-              }]
+              event_log: [{}]
             }
           });
         }

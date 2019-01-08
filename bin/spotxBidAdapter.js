@@ -41,9 +41,7 @@ export const spec = {
       return false;
     }
 
-    const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-    const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-    if ((bid.mediaType === 'video' || (videoMediaType && context === 'outstream')) || utils.getBidIdParameter('ad_unit', bid.params) == 'outstream') {
+    if (utils.deepAccess(bid, 'mediaTypes.video.context') == 'outstream' || utils.deepAccess(bid, 'params.ad_unit') == 'outstream') {
       if (!utils.getBidIdParameter('outstream_function', bid.params)) {
         if (!utils.getBidIdParameter('outstream_options', bid.params)) {
           utils.logError(BIDDER_CODE + ': please define outstream_options parameter or override the default SpotX outstream rendering by defining your own Outstream function using field outstream_function.');
@@ -83,14 +81,8 @@ export const spec = {
       const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
 
       const ext = {
-        player_width: contentWidth,
-        player_height: contentHeight,
         sdk_name: 'Prebid 1+',
-        ad_mute: +!!utils.getBidIdParameter('ad_mute', bid.params),
-        hide_skin: +!!utils.getBidIdParameter('hide_skin', bid.params),
-        content_page_url: page,
-        versionOrtb: ORTB_VERSION,
-        bidId: bid.bidId
+        versionOrtb: ORTB_VERSION
       };
 
       if (utils.getBidIdParameter('ad_volume', bid.params) != '') {
@@ -120,7 +112,7 @@ export const spec = {
           const preMarketBid = preMarketBids[i];
           let vastStr = '';
           if (preMarketBid['vast_url']) {
-            vastStr = '<VAST><Ad><Wrapper><VASTAdTagURI>' + preMarketBid['vast_url'] + '</VASTAdTagURI></Wrapper></Ad></VAST>';
+            vastStr = '<?xml version="1.0" encoding="utf-8"?><VAST version="2.0"><Ad><Wrapper><VASTAdTagURI>' + preMarketBid['vast_url'] + '</VASTAdTagURI></Wrapper></Ad></VAST>';
           } else if (preMarketBid['vast_string']) {
             vastStr = preMarketBid['vast_string'];
           }
@@ -128,7 +120,6 @@ export const spec = {
             id: preMarketBid['deal_id'],
             seatbid: [{
               bid: [{
-                id: preMarketBid['deal_id'],
                 impid: Date.now(),
                 dealid: preMarketBid['deal_id'],
                 price: preMarketBid['price'],
@@ -242,48 +233,58 @@ export const spec = {
     const bidResponses = [];
     const serverResponseBody = serverResponse.body;
 
-    const requestMap = {};
-    if (bidderRequest && bidderRequest.data && bidderRequest.data.imp) {
-      utils._each(bidderRequest.data.imp, imp => requestMap[imp.id] = imp);
-    }
-
     if (serverResponseBody && utils.isArray(serverResponseBody.seatbid)) {
       utils._each(serverResponseBody.seatbid, function(bids) {
         utils._each(bids.bid, function(spotxBid) {
-          const request = requestMap[spotxBid.impid];
+          let currentBidRequest = {};
+          for (let i in bidderRequest.bidRequest.bids) {
+            if (bidderRequest.bidRequest.bidderRequestId == bidderRequest.bidRequest.bids[i].bidderRequestId) {
+              currentBidRequest = bidderRequest.bidRequest.bids[i];
+            }
+          }
+
+          /**
+          * Make sure currency and price are the right ones
+          * TODO: what about the pre_market_bid partners sizes?
+          */
+          utils._each(currentBidRequest.params.pre_market_bids, function(pmb) {
+            if (pmb.deal_id == spotxBid.id) {
+              spotxBid.price = pmb.price;
+              serverResponseBody.cur = pmb.currency;
+            }
+          });
 
           const bid = {
-            requestId: request.video.ext.bidId,
+            requestId: currentBidRequest.bidId,
             currency: serverResponseBody.cur || 'USD',
             cpm: spotxBid.price,
             creativeId: spotxBid.crid || '',
             ttl: 360,
             netRevenue: true,
             channel_id: serverResponseBody.id,
-            cache_key: spotxBid.ext.cache_key
+            cache_key: spotxBid.ext.cache_key,
+            vastUrl: '//search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key,
+            mediaType: VIDEO,
+            width: spotxBid.w,
+            height: spotxBid.h
           };
 
-          if (request.video) {
-            bid.vastUrl = '//search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key;
-            bid.mediaType = VIDEO;
-            bid.width = spotxBid.w;
-            bid.height = spotxBid.h;
-          }
-
-          const videoMediaType = utils.deepAccess(bidderRequest, 'mediaTypes.video');
-          const context = utils.deepAccess(bidderRequest, 'mediaTypes.video.context');
-          if ((bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) || (request.video.ext.ad_unit == 'outstream')) {
+          const context1 = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
+          const context2 = utils.deepAccess(currentBidRequest, 'params.ad_unit');
+          if (context1 == 'outstream' || context2 == 'outstream') {
+            const playersize = utils.deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
               id: 0,
               url: '//',
               config: {
                 adText: 'SpotX Outstream Video Ad via Prebid.js',
-                player_width: request.video.ext.player_width,
-                player_height: request.video.ext.player_height,
-                content_page_url: request.video.ext.content_page_url,
-                ad_mute: request.video.ext.ad_mute,
-                outstream_options: request.video.ext.outstream_options,
-                outstream_function: request.video.ext.outstream_function
+                player_width: playersize[0][0],
+                player_height: playersize[0][1],
+                content_page_url: utils.deepAccess(bidderRequest, 'data.site.page'),
+                ad_mute: +!!utils.deepAccess(currentBidRequest, 'params.ad_mute'),
+                hide_skin: +!!utils.deepAccess(currentBidRequest, 'params.hide_skin'),
+                outstream_options: utils.deepAccess(currentBidRequest, 'params.outstream_options'),
+                outstream_function: utils.deepAccess(currentBidRequest, 'params.outstream_function')
               }
             });
 
@@ -320,6 +321,7 @@ function outstreamRender(bid) {
     bid.renderer.config.outstream_function(bid);
   } else {
     try {
+      const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
       utils.logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');
       const script = window.document.createElement('script');
       script.type = 'text/javascript';
@@ -338,6 +340,34 @@ function outstreamRender(bid) {
       dataSpotXParams['data-spotx_autoplay'] = '1';
       dataSpotXParams['data-spotx_blocked_autoplay_override_mode'] = '1';
       dataSpotXParams['data-spotx_video_slot_can_autoplay'] = '1';
+
+      const playersizeAutoAdapt = utils.getBidIdParameter('playersize_auto_adapt', bid.renderer.config.outstream_options);
+      if (playersizeAutoAdapt && utils.isBoolean(playersizeAutoAdapt) && playersizeAutoAdapt === true) {
+        if (bid.width && utils.isNumber(bid.width) && bid.height && utils.isNumber(bid.height)) {
+          const ratio = bid.width / bid.height;
+          const slotClientWidth = window.document.getElementById(slot).clientWidth;
+          let playerWidth = bid.renderer.config.player_width;
+          let playerHeight = bid.renderer.config.player_height;
+          let contentWidth = 0;
+          let contentHeight = 0;
+          if (slotClientWidth < playerWidth) {
+            playerWidth = slotClientWidth;
+            playerHeight = playerWidth / ratio;
+          }
+          if (ratio <= 1) {
+            contentWidth = Math.round(playerHeight * ratio);
+            contentHeight = playerHeight;
+          } else {
+            contentWidth = playerWidth;
+            contentHeight = Math.round(playerWidth / ratio);
+          }
+
+          dataSpotXParams['data-spotx_content_width'] = '' + contentWidth;
+          dataSpotXParams['data-spotx_content_height'] = '' + contentHeight;
+        } else {
+          utils.logWarn('[SPOTX][renderer] PlayerSize auto adapt: bid.width and bid.height are incorrect');
+        }
+      }
 
       const customOverride = utils.getBidIdParameter('custom_override', bid.renderer.config.outstream_options);
       if (customOverride && utils.isArray(customOverride)) {
@@ -370,7 +400,6 @@ function outstreamRender(bid) {
         }
         framedoc.body.appendChild(script);
       } else {
-        const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
         if (slot && window.document.getElementById(slot)) {
           window.document.getElementById(slot).appendChild(script);
         } else {

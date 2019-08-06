@@ -39,6 +39,37 @@ This adapter requires setup and approval from the SpotX team.
 
 # Test Parameters - Use case #2 - outstream with default rendering options + some other options
 ```
+var adUnits = [{
+        code: 'something',
+        mediaTypes: {
+            video: {
+                context: 'outstream', // 'instream' or 'outstream'
+                playerSize: [640, 480]
+            }
+        },
+        bids: [{
+            bidder: 'spotx',
+            params: {
+                channel_id: 85394,
+                ad_unit: 'outstream',
+                outstream_options: {
+                    slot: 'adSlot1',
+
+                    custom_override: { // This option is not mandatory though used to override default renderer parameters using EASI player options in here: https://developer.spotxchange.com/content/local/docs/sdkDocs/EASI/README.md
+                        content_width: 300,
+                        content_height: 250,
+                        collapse: '1',
+                        hide_fullscreen: '1',
+                        unmute_on_mouse: '1',
+                        continue_out_of_view: '1',
+                        ad_volume: '100',
+                        content_container_id: 'video1',
+                        hide_skin: '1'
+                    }
+                }
+            }
+        }]
+    }];
     var adUnits = [{
         code: 'something',
         mediaTypes: {
@@ -134,6 +165,7 @@ function myOutstreamFunction(bid) {
     script.setAttribute('data-spotx_click_to_replay', '1');
     script.setAttribute('data-spotx_continue_out_of_view', '1');
     script.setAttribute('data-spotx_ad_volume', '100');
+    script.setAttribute('data-spotx_hide_skin', '1');
     if (bid.renderer.config.inIframe && window.document.getElementById(bid.renderer.config.inIframe).nodeName == 'IFRAME') {
         let rawframe = window.document.getElementById(bid.renderer.config.inIframe);
         let framedoc = rawframe.contentDocument;

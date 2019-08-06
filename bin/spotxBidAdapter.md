@@ -70,49 +70,6 @@ var adUnits = [{
             }
         }]
     }];
-    var adUnits = [{
-        code: 'something',
-        mediaTypes: {
-            video: {
-                context: 'outstream', // 'instream' or 'outstream'
-                playerSize: [640, 480]
-            }
-        },
-        bids: [{
-            bidder: 'spotx',
-            params: {
-                channel_id: 79391,
-                ad_unit: 'outstream',
-                outstream_options: {
-                    video_slot: 'video1',
-                    content_width: 300,
-                    content_height: 250,
-                    custom_override: [{ // This option is not mandatory though used to override default renderer parameters using EASI player options in here: https://developer.spotxchange.com/content/local/docs/sdkDocs/EASI/README.md
-                        name: 'collapse',
-                        value: '1'
-                    }, {
-                        name: 'hide_fullscreen',
-                        value: '1'
-                    }, {
-                        name: 'unmute_on_mouse',
-                        value: '1'
-                    }, {
-                        name: 'click_to_replay',
-                        value: '1'
-                    }, {
-                        name: 'continue_out_of_view',
-                        value: '1'
-                    }, {
-                        name: 'ad_volume',
-                        value: '100'
-                    }, {
-                        name: 'content_container_id',
-                        value: 'video1'
-                    }]
-                }
-            }
-        }]
-    }];
 ```
 
 # Test Parameters - Use case #3 - outstream with your own outstream redering function
